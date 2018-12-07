@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <!--solr服务-->
+    <bean id="cloudSolrServer" class="org.apache.solr.client.solrj.impl.CloudSolrServer">
+        <constructor-arg index="0" value="10.211.55.4`:2181"/>
+        <property name="defaultCollection" value="products"/>
+    </bean>
+    <!--solr服务工厂-->
+    <bean id="httpSolrServerFactory"
+          class="org.springframework.data.solr.server.support.HttpSolrServerFactory">
+        <constructor-arg index="0" ref="cloudSolrServer"/>
+    </bean>
+    <!--product模板-->
+    <bean id="solrProductTemplate" class="org.springframework.data.solr.core.SolrTemplate">
+        <constructor-arg index="0" ref="httpSolrServerFactory"/>
+    </bean>
+    <bean id="solrProductServiceImpl" class="com.product.service.solr.impl.SolrProductServiceImpl">
+        <property name="solrOperations" ref="solrProductTemplate"/>
+    </bean>
+    <!--suggest模板-->
+    <bean id="solrSuggestTemplate" class="org.springframework.data.solr.core.SolrTemplate">
+        <constructor-arg index="0" ref="httpSolrServerFactory"/>
+        <property name="solrCore" value="suggest"/>
+    </bean>
+
+    <bean id="solrSuggestServiceImpl" class="com.product.service.solr.impl.SolrSuggestServiceImpl">
+        <property name="solrOperations" ref="solrSuggestTemplate"/>
+    </bean>
+</beans>

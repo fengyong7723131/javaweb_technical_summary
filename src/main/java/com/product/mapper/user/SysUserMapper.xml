@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.product.mapper.user.SysUserMapper">
+
+    <resultMap id="sysUserMap" type="com.product.po.user.base.BaseSysUserPo">
+        <id column="USER_ID" property="userId"/>
+        <result column="ACCOUT" property="accout"/>
+        <result column="USER_NAME" property="userName"/>
+        <result column="PASSWORD" property="password"/>
+        <result column="MOBILE" property="mobile"/>
+        <result column="TELPHONE" property="telphone"/>
+        <result column="EMAIL" property="email"/>
+        <result column="IM_TYPE" property="imType"/>
+        <result column="IM_NO" property="imNo"/>
+        <result column="ENT_ID" property="entId"/>
+        <result column="STORE_ID" property="storeId"/>
+        <result column="CREATE_TIME" property="createTime"/>
+        <result column="MODIFY_TIME" property="modifyTime"/>
+        <result column="CREATOR" property="creator"/>
+        <result column="MODIFIER" property="modifier"/>
+        <result column="IS_DELETE" property="isDelete"/>
+        <result column="ROLE_ID" property="roleId"/>
+        <result column="IS_MAIN" property="isMain"/>
+    </resultMap>
+
+    <sql id="sysUserSql">
+        USER_ID,
+        ACCOUT,
+        USER_NAME,
+        PASSWORD,
+        MOBILE,
+        TELPHONE,
+        EMAIL,
+        IM_TYPE,
+        IM_NO,
+        ENT_ID,
+        STORE_ID,
+        CREATE_TIME,
+        MODIFY_TIME,
+        CREATOR,
+        MODIFIER,
+        IS_DELETE,
+        ROLE_ID,
+        IS_MAIN
+    </sql>
+
+    <sql id="sysUser-where-condition">
+        <where>
+            <if test="userId != null">
+                AND USER_ID = #{userId}
+            </if>
+
+            <if test="accout != null">
+                AND ACCOUT = #{accout}
+            </if>
+
+            <if test="userName != null">
+                AND USER_NAME = #{userName}
+            </if>
+
+            <if test="password != null">
+                AND PASSWORD = #{password}
+            </if>
+
+            <if test="mobile != null">
+                AND MOBILE = #{mobile}
+            </if>
+
+            <if test="telphone != null">
+                AND TELPHONE = #{telphone}
+            </if>
+
+            <if test="email != null">
+                AND EMAIL = #{email}
+            </if>
+
+            <if test="imType != null">
+                AND IM_TYPE = #{imType}
+            </if>
+
+            <if test="imNo != null">
+                AND IM_NO = #{imNo}
+            </if>
+
+            <if test="entId != null">
+                AND ENT_ID = #{entId}
+            </if>
+
+            <if test="storeId != null">
+                AND STORE_ID = #{storeId}
+            </if>
+
+            <if test="createTime != null">
+                AND CREATE_TIME = #{createTime}
+            </if>
+
+            <if test="modifyTime != null">
+                AND MODIFY_TIME = #{modifyTime}
+            </if>
+
+            <if test="creator != null">
+                AND CREATOR = #{creator}
+            </if>
+
+            <if test="modifier != null">
+                AND MODIFIER = #{modifier}
+            </if>
+
+            <if test="isDelete != null">
+                AND IS_DELETE = #{isDelete}
+            </if>
+
+            <if test="roleId != null">
+                AND ROLE_ID = #{roleId}
+            </if>
+
+            <if test="isMain != null">
+                AND IS_MAIN = #{isMain}
+            </if>
+
+        </where>
+    </sql>
+
+
+    <sql id="sysUserPaging-where-condition">
+        <where>
+            <if test="f.userId != null">
+                AND USER_ID = #{f.userId}
+            </if>
+
+            <if test="f.accout != null">
+                AND ACCOUT = #{f.accout}
+            </if>
+
+            <if test="f.userName != null">
+                AND USER_NAME = #{f.userName}
+            </if>
+
+            <if test="f.password != null">
+                AND PASSWORD = #{f.password}
+            </if>
+
+            <if test="f.mobile != null">
+                AND MOBILE = #{f.mobile}
+            </if>
+
+            <if test="f.telphone != null">
+                AND TELPHONE = #{f.telphone}
+            </if>
+
+            <if test="f.email != null">
+                AND EMAIL = #{f.email}
+            </if>
+
+            <if test="f.imType != null">
+                AND IM_TYPE = #{f.imType}
+            </if>
+
+            <if test="f.imNo != null">
+                AND IM_NO = #{f.imNo}
+            </if>
+
+            <if test="f.entId != null">
+                AND ENT_ID = #{f.entId}
+            </if>
+
+            <if test="f.storeId != null">
+                AND STORE_ID = #{f.storeId}
+            </if>
+
+            <if test="f.createTime != null">
+                AND CREATE_TIME = #{f.createTime}
+            </if>
+
+            <if test="f.modifyTime != null">
+                AND MODIFY_TIME = #{f.modifyTime}
+            </if>
+
+            <if test="f.creator != null">
+                AND CREATOR = #{f.creator}
+            </if>
+
+            <if test="f.modifier != null">
+                AND MODIFIER = #{f.modifier}
+            </if>
+
+            <if test="f.isDelete != null">
+                AND IS_DELETE = #{f.isDelete}
+            </if>
+
+            <if test="f.roleId != null">
+                AND ROLE_ID = #{f.roleId}
+            </if>
+
+            <if test="f.isMain != null">
+                AND IS_MAIN = #{f.isMain}
+            </if>
+
+        </where>
+    </sql>
+
+
+    <insert id="insert" parameterType="com.product.po.user.base.BaseSysUserPo">
+        <selectKey resultType="java.lang.Long" order="AFTER"
+                   keyProperty="userId">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO T_SYS_USER (
+            USER_ID,
+            ACCOUT,
+            USER_NAME,
+            PASSWORD,
+            MOBILE,
+            TELPHONE,
+            EMAIL,
+            IM_TYPE,
+            IM_NO,
+            ENT_ID,
+            STORE_ID,
+            CREATE_TIME,
+            MODIFY_TIME,
+            CREATOR,
+            MODIFIER,
+            IS_DELETE,
+            ROLE_ID,
+            IS_MAIN
+        )
+        VALUES (
+            #{userId},
+            #{accout},
+            #{userName},
+            #{password},
+            #{mobile},
+            #{telphone},
+            #{email},
+            #{imType},
+            #{imNo},
+            #{entId},
+            #{storeId},
+            #{createTime},
+            #{modifyTime},
+            #{creator},
+            #{modifier},
+            #{isDelete},
+            #{roleId},
+            #{isMain}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.product.po.user.base.BaseSysUserPo">
+        UPDATE T_SYS_USER
+        <set>
+
+            <if test="userId != null">
+                USER_ID = #{userId},
+            </if>
+
+            <if test="accout != null">
+                ACCOUT = #{accout},
+            </if>
+
+            <if test="userName != null">
+                USER_NAME = #{userName},
+            </if>
+
+            <if test="password != null">
+                PASSWORD = #{password},
+            </if>
+
+            <if test="mobile != null">
+                MOBILE = #{mobile},
+            </if>
+
+            <if test="telphone != null">
+                TELPHONE = #{telphone},
+            </if>
+
+            <if test="email != null">
+                EMAIL = #{email},
+            </if>
+
+            <if test="imType != null">
+                IM_TYPE = #{imType},
+            </if>
+
+            <if test="imNo != null">
+                IM_NO = #{imNo},
+            </if>
+
+            <if test="entId != null">
+                ENT_ID = #{entId},
+            </if>
+
+            <if test="storeId != null">
+                STORE_ID = #{storeId},
+            </if>
+
+            <if test="createTime != null">
+                CREATE_TIME = #{createTime},
+            </if>
+
+            <if test="modifyTime != null">
+                MODIFY_TIME = #{modifyTime},
+            </if>
+
+            <if test="creator != null">
+                CREATOR = #{creator},
+            </if>
+
+            <if test="modifier != null">
+                MODIFIER = #{modifier},
+            </if>
+
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete},
+            </if>
+
+            <if test="roleId != null">
+                ROLE_ID = #{roleId},
+            </if>
+
+            <if test="isMain != null">
+                IS_MAIN = #{isMain},
+            </if>
+
+        </set>
+
+        WHERE
+                USER_ID = #{userId}
+
+    </update>
+
+    <delete id="deleteByPrimaryKey">
+        DELETE FROM T_SYS_USER
+        WHERE 
+            USER_ID = #{userId}
+
+    </delete>
+
+    <select id="selectByPrimaryKey" resultMap="sysUserMap">
+        SELECT <include refid="sysUserSql"/>
+        FROM T_SYS_USER
+        WHERE 
+            USER_ID = #{userId}
+
+    </select>
+
+    <select id="selectByCond" resultMap="sysUserMap">
+        SELECT <include refid="sysUserSql"/>
+        FROM T_SYS_USER
+        <include refid="sysUser-where-condition"/>
+    </select>
+
+    <select id="selectListByCond" resultMap="sysUserMap">
+        SELECT <include refid="sysUserSql"/>
+        FROM T_SYS_USER
+        <include refid="sysUser-where-condition"/>
+    </select>
+
+    <select id="selectTotalCountByPaging" resultType="int">
+        SELECT COUNT(1)
+        FROM T_SYS_USER
+        <include refid="sysUserPaging-where-condition"/>
+    </select>
+
+    <select id="selectListByPaging" resultMap="sysUserMap">
+        SELECT <include refid="sysUserSql"/>
+        FROM #{f.tableName}
+        <include refid="sysUserPaging-where-condition"/>
+
+        limit #{beginCount}, #{pageRows}
+    </select>
+
+</mapper>
+
+

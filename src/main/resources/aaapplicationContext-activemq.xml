@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+">
+    <!-- 引入配置文件 -->
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="location" value="classpath:aaactivemq.properties"/>
+    </bean>
+
+    <!-- 发送端到broker -->
+    <bean id="activeMqSendsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://localhost:61616"></property>
+        <property name="userName" value="admin"></property>
+        <property name="password" value="admin"></property>
+        <!--useAsyncSend:如果是同步,会在broker确认接收并且已经持久化,
+        才会进行下一个消息的send,如果是在事务中,那么阻塞的就是commit,如果允许丢失一些message,
+        那么可以用异步发送,useAsyncSend设置为true-->
+        <property name="useAsyncSend" value="true"></property>
+        <!--如果您使用的是异步发送方式(不管是持久化还是非持久化)，那么必须通过这个以下代码指明回执点-->
+        <!--以下语句设置消息发送者在累计发送102400byte大小的消息后（可能是一条消息也可能是多条消息）-->
+        <!--等待服务端进行回执,以便确定之前发送的消息是否被正确处理-->
+        <!--确定服务器端是否产生了过量的消息堆积，需要减慢消息生产端的生产速度-->
+        <!--（这个配置只是针对使用异步方式进行发送消息的情况）-->
+        <property name="producerWindowSize" value="102400"></property>
+        <!--发送NON_PERSISTENT Message时，这时消息发送者默认使用异步方式。那么如果您想在发送NON_PERSISTENT Message时，-->
+        <!--每次都等待消息回执，又该如何设置呢？-->
+        <!--您可以使用connectionFactory提供的“alwaysSyncSend”设置来指定每次都等待服务端的回执-->
+        <property name="alwaysSyncSend" value="false"></property>
+    </bean>
+    <!-- broker到接收端,真正可以产生Connection的ConnectionFactory，由对应的 JMS服务厂商提供 -->
+    <bean id="activeMqReceivesConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://localhost:61616"></property>
+        <property name="userName" value="admin"></property>
+        <property name="password" value="admin"></property>
+        <!--在默认情况下ActiveMQ服务端采用异步方式向客户端推送消息。也就是说ActiveMQ服务端在向某个消费者会话推送消息后，-->
+        <!--不会等待消费者的响应信息，直到消费者处理完消息后，主动向服务端返回处理结果。如果您对自己的消费者性能足够满意，-->
+        <!--也可以将这个过程设置为“同步”-->
+        <property name="dispatchAsync" value="true"></property>
+        <!--ActiveMQ系统中，默认的策略是ActiveMQ服务端一旦有消息，就主动按照设置的规则推送给当前活动的消费者。-->
+        <!--其中每次推送都有一定的数量限制，这个限制值就是prefetchSize,不要设置为prefetchSize=0，-->
+        <!--因为这将导致关闭服务器端的推送机制，改为客户端主动请求。-->
+        <!--PERSISTENT Message—Queue：prefetchSize=1000-->
+        <!--NON_PERSISTENT Message—Queue：prefetchSize=1000-->
+        <!--PERSISTENT Message—Topic：prefetchSize=100-->
+        <!--NON_PERSISTENT Message—Topic：prefetchSize=32766-->
+        <property name="prefetchPolicy">
+            <bean name="prefetchPolicy" class="org.apache.activemq.ActiveMQPrefetchPolicy">
+                <property name="queuePrefetch" value="1000"></property>
+            </bean>
+        </property>
+        <!--默认情况下“死信队列”只接受PERSISTENT Message，如果NON_PERSISTENT Message超过了重发上限，-->
+        <!--将直接被删除,如果要设置非持久化信息也进入死信队列,那可以设置activemq.xml-->
+        <property name="redeliveryPolicy">
+            <bean id="redeliveryPolicy" class="org.apache.activemq.RedeliveryPolicy">
+                <!--是否在每次尝试重新发送失败后,增长这个等待时间-->
+                <property name="useExponentialBackOff" value="true"></property>
+                <!--重发次数,默认为6次-->
+                <property name="maximumRedeliveries" value="3"></property>
+                <!--重发时间间隔,默认为1秒-->
+                <property name="initialRedeliveryDelay" value="1000"></property>
+                <!--第一次失败后重新发送之前等待500毫秒,第二次失败再等待500 * 2毫秒,这里的2就是value-->
+                <property name="backOffMultiplier" value="2"></property>
+
+            </bean>
+            <!--ActiveMQ的重发机制:-->
+            <!--在支持事务的消费者连接会话中调用rollback方法。-->
+            <!--在支持事务的消费者连接会话中，使用commit方法明确告知服务器端消息已处理成功前，会话连接就终止了（最可能是异常终止）-->
+            <!--在需要使用ACK模式的会话中，使用消息的acknowledge方式明确告知服务器端消息已处理成功前，会话连接就终止了（最可能是异常终止）-->
+        </property>
+    </bean>
+
+
+    <!-- ActiveMQ为我们提供了一个PooledConnectionFactory，往里面注入一个ActiveMQConnectionFactory可以用来将Connection,
+         Session和MessageProducer池化，这样可以大大的减少我们的资源消耗。
+         问题:使用poolConnectionFactory时候,用JMSTemplate同步循环接收消息,因为JMSTemplate会自动在接收消息后关闭连接,
+         所以循环到第二次的时候会报错,这个问题待解决
+         问题:使用poolConnectionFactory时候,用监听来接收消息,会有部分消息残留在队列里面,问题待解决
+         结论:还是先别用连接池了-->
+    <bean id="poolConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory">
+        <property name="connectionFactory" ref="activeMqReceivesConnectionFactory"/>
+        <property name="maxConnections" value="10"/>
+    </bean>
+    <!-- Spring用于管理真正的ConnectionFactory的ConnectionFactory 这里我使用的是singleConnectionFactory-->
+    <bean id="sendsConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+        <property name="targetConnectionFactory" ref="activeMqSendsConnectionFactory"/>
+    </bean>
+    <bean id="receivesConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+        <property name="targetConnectionFactory" ref="activeMqReceivesConnectionFactory"/>
+    </bean>
+    <bean id="cachingConnectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+        <property name="targetConnectionFactory" ref="activeMqReceivesConnectionFactory"/>
+    </bean>
+
+
+    <!-- 配置生产者 -->
+    <!-- Spring提供的JMS工具类，它可以进行消息发送、接收等 -->
+    <bean id="senderJmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <!-- 这个connectionFactory对应的是我们定义的Spring提供的那个ConnectionFactory对象 -->
+        <property name="connectionFactory" ref="sendsConnectionFactory"/>
+
+        <!-- NON_PERSISTENT非持久化 1 ，PERSISTENT持久化 2 -->
+        <property name="deliveryMode" value="2"/>
+        <property name="sessionTransacted" value="true"/>
+        <property name="sessionAcknowledgeModeName" value="AUTO_ACKNOWLEDGE"/>
+    </bean>
+    <!--这个是队列目的地，点对点的 -->
+    <bean id="activeMQQueue" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="First"/>
+    </bean>
+    <!--这个是主题目的地，一对多的 -->
+    <bean id="topicDestination" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg value="topic"/>
+    </bean>
+
+    <!-- 自定义消费者 -->
+    <!-- Spring提供的JMS工具类，它可以进行消息发送、接收等 -->
+    <bean id="receiverJmsTemplate" class="com.product.freemwork.amq.SimpleJmsTemplate">
+        <!-- 这个connectionFactory对应的是我们定义的Spring提供的那个ConnectionFactory对象 -->
+        <property name="connectionFactory" ref="receivesConnectionFactory"/>
+
+        <!-- 如果是原生的amq创建的session,将session设置为true时候,ack会固定被设置为AUTO_ACKNOWLEDGE
+             所以想要手动确认,那么session的事物必须设置为false,并且ack设置为CLIENT_ACKNOWLEDGE -->
+        <property name="sessionTransacted" value="false"/>
+        <property name="sessionAcknowledgeModeName" value="CLIENT_ACKNOWLEDGE"/>
+        <property name="receiveTimeout" value="1000"/>
+        <property name="autoAcknowledge" value="true"/>
+    </bean>
+
+    <!-- 配置监听器 -->
+    <bean id="myMessageListener" class="com.product.msg.MyMessageListener"/>
+    <!--消息监听容器-->
+    <bean id="jmsContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="activeMqSendsConnectionFactory"/>
+        <property name="destination" ref="activeMQQueue"/>
+        <property name="messageListener" ref="myMessageListener"/>
+        <!-- 消息接收超时时间,单位毫秒 需要小于事物超时时间-->
+        <property name="receiveTimeout" value="60000"/>
+
+        <!--ACK_MODE确认模式
+        AUTO_ACKNOWLEDGE = 1    自动确认
+        CLIENT_ACKNOWLEDGE = 2    客户端手动确认
+        DUPS_OK_ACKNOWLEDGE = 3    自动批量确认
+        SESSION_TRANSACTED = 0    事务提交并确认 -->
+        <property name="sessionTransacted" value="true"/>
+        <!-- 事物超时时间 -->
+        <property name="transactionTimeout" value="300000"/>
+
+        <!--<property name="cacheLevel" value="0"/>-->
+        <property name="sessionAcknowledgeModeName" value="AUTO_ACKNOWLEDGE"/>
+        <!--<property name="transactionManager" ref="jtaTransactionManager"/>-->
+    </bean>
+
+    <!-- 如果想要接收消息和数据库访问处于同一事务中，那么我们就可以配置一个外部的事务管理同时配置
+    一个支持外部事务管理的消息监听容器（如DefaultMessageListenerContainer)。
+    要配置这样一个参与分布式事务管理的消息监听容器，我们可以配置一个JtaTransactionManager，
+    当然底层的JMS ConnectionFactory需要能够支持分布式事务管理，并正确地注册我们的JtaTransactionManager。
+    这样消息监听器进行消息接收和对应的数据库访问就会处于同一数据库控制下，当消息接收失败或数据库访问失败都会进行事务回滚操作
+    。注意:开启分布式事务时,sessionTransacted会失效 -->
+    <!--<bean id="jtaTransactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">-->
+    <!--</bean>-->
+    <!-- jotm 本地实例 -->
+
+</beans>
